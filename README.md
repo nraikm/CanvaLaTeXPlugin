@@ -3,6 +3,8 @@
 A Canva app that lets you insert beautiful LaTeX math equations into a design and
 **re-edit them at any time** simply by selecting the equation on the page.
 
+Live demo: [canvalatexplugin.vercel.app](https://canvalatexplugin.vercel.app/)
+
 Built on the [Canva Apps SDK](https://www.canva.dev/docs/apps/) starter kit.
 
 ## Features
