@@ -5,6 +5,10 @@ A Canva app that lets you insert beautiful LaTeX math equations into a design an
 
 Live demo: [canvalatexplugin.vercel.app](https://canvalatexplugin.vercel.app/)
 
+<p align="center">
+  <img src="./banner.png" alt="LaTeX Math for Canva Banner" width="800" />
+</p>
+
 Built on the [Canva Apps SDK](https://www.canva.dev/docs/apps/) starter kit.
 
 ## Features
