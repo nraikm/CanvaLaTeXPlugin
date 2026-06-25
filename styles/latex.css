@@ -1,0 +1,58 @@
+.appScroll {
+  box-sizing: border-box;
+  height: 100%;
+  overflow-y: auto;
+  padding: var(--ui-kit-space-200, 16px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-kit-color-content-placeholder-fg) transparent;
+}
+
+/* Row that keeps the primary action filling the available width with a
+   compact icon button (favorite star) sitting beside it. */
+.submitRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-kit-space-100, 8px);
+}
+
+.submitRow > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Size control: preset dropdown with Canva's native editable spin button. */
+.sizeRow {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-kit-space-100, 8px);
+}
+
+.sizeRow > :first-child {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+
+.sizeRow > :last-child {
+  flex: 0 0 112px;
+  width: 112px;
+}
+
+/* Favorite card with a destructive trash action overlaid in the top corner. */
+.favoriteCardWrap {
+  position: relative;
+}
+
+.favoriteTrash {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  background: var(--ui-kit-color-surface, #ffffff);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
