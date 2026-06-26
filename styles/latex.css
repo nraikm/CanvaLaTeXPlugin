@@ -20,32 +20,149 @@
   min-width: 0;
 }
 
-/* Size control: preset dropdown with Canva's native editable spin button. */
-.sizeRow {
-  display: flex;
-  align-items: center;
+.fontSizeRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 118px;
   gap: var(--ui-kit-space-100, 8px);
+  align-items: start;
 }
 
-.sizeRow > :first-child {
-  flex: 1 1 120px;
+.colorSizeRow {
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr);
+  gap: var(--ui-kit-space-150, 12px);
+  align-items: start;
+}
+
+.sizeComboTrigger {
+  align-items: center;
+  border: 1px solid var(--ui-kit-color-border, #cfd3dc);
+  border-radius: var(--ui-kit-border-radius-large, 16px);
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 32px;
+  height: 40px;
+  overflow: visible;
+  width: 100%;
+}
+
+.sizeComboInput {
+  appearance: textfield;
+  background: transparent;
+  border: 0;
+  color: var(--ui-kit-color-typography-primary, #0e1318);
+  font-family:
+    "Canva Sans",
+    "Noto Sans Variable",
+    "Noto Sans",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Helvetica,
+    Arial,
+    sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  height: 100%;
   min-width: 0;
+  outline: none;
+  padding: 0;
+  text-align: center;
+  width: 100%;
 }
 
-.sizeRow > :last-child {
-  flex: 0 0 112px;
-  width: 112px;
+.sizeComboInput::-webkit-inner-spin-button,
+.sizeComboInput::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
 }
 
-/* Favorite card with a destructive trash action overlaid in the top corner. */
-.favoriteCardWrap {
+.sizeStepButton {
+  align-items: center;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: var(--ui-kit-color-typography-primary, #0e1318);
+  cursor: pointer;
+  display: flex;
+  font-family:
+    "Canva Sans",
+    "Noto Sans Variable",
+    "Noto Sans",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Helvetica,
+    Arial,
+    sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  height: 100%;
+  justify-content: center;
+  line-height: 1;
+  margin: 0;
+  padding: 0;
   position: relative;
+  width: 32px;
+}
+
+.sizeStepButton:hover {
+  background: var(--ui-kit-color-surface-hover, rgba(57, 76, 96, 0.08));
+}
+
+.sizeStepButton::after {
+  background: #25262b;
+  border-radius: 8px;
+  bottom: calc(100% + 10px);
+  color: #ffffff;
+  content: attr(data-tooltip);
+  font-size: 12px;
+  font-weight: 600;
+  left: 50%;
+  line-height: 1.2;
+  opacity: 0;
+  padding: 8px 10px;
+  pointer-events: none;
+  position: absolute;
+  transform: translateX(-50%) translateY(4px);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+  visibility: hidden;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.sizeStepButton::before {
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #25262b;
+  bottom: calc(100% + 4px);
+  content: "";
+  left: 50%;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transform: translateX(-50%) translateY(4px);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+  visibility: hidden;
+  z-index: 10;
+}
+
+.sizeStepButton:hover::after,
+.sizeStepButton:focus-visible::after,
+.sizeStepButton:hover::before,
+.sizeStepButton:focus-visible::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  visibility: visible;
 }
 
 .favoriteTrash {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 8px;
+  right: 8px;
   z-index: 2;
   display: flex;
   align-items: center;
@@ -57,8 +174,82 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
 }
 
-.whiteThumbnailContainer {
-  background-color: #ffffff;
-  border-radius: 8px; /* Matches Canva's standard borderRadius */
+.formulaList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-kit-space-100, 8px);
 }
 
+.formulaListItem {
+  position: relative;
+}
+
+/* Formula Preview */
+.previewContainer {
+  background-color: var(--ui-kit-color-surface, #ffffff);
+  border-radius: var(--ui-kit-border-radius-standard, 4px);
+  border: 1px solid var(--ui-kit-color-border-subtle, #e0e0e0);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 72px;
+  padding: 12px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.previewImage {
+  display: block;
+  max-height: 160px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.formulaCardButton {
+  appearance: none;
+  background-color: var(--ui-kit-color-surface, #ffffff);
+  border-radius: var(--ui-kit-border-radius-standard, 4px);
+  border: 1px solid var(--ui-kit-color-border-subtle, #e0e0e0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 112px;
+  padding: 16px;
+  overflow: hidden;
+  width: 100%;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.formulaCardImage {
+  display: block;
+  max-width: 100%;
+  max-height: 144px;
+  object-fit: contain;
+}
+
+.formulaCardButton:hover {
+  opacity: 0.8;
+}
+
+.formulaTextButton {
+  appearance: none;
+  background-color: var(--ui-kit-color-surface, #ffffff);
+  border-radius: var(--ui-kit-border-radius-standard, 4px);
+  border: 1px solid var(--ui-kit-color-border-subtle, #e0e0e0);
+  cursor: pointer;
+  display: block;
+  overflow: hidden;
+  padding: 12px 16px;
+  text-align: left;
+  width: 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+  .previewContainer,
+  .formulaCardButton,
+  .formulaTextButton {
+    background-color: var(--ui-kit-color-surface, #222222);
+  }
+}

@@ -2,15 +2,13 @@ import {
   Alert,
   Box,
   Button,
+  ChevronDownIcon,
+  CustomizableSelect,
   FormField,
-  Grid,
-  ImageCard,
   LinkButton,
   MultilineInput,
-  NumberInput,
   Rows,
   SegmentedControl,
-  Select,
   StarFilledIcon,
   StarIcon,
   Swatch,
@@ -69,6 +67,8 @@ const FONT_SIZE_STEP = 1;
 const MAX_TEXT_FONT_SIZE = 100;
 
 const DEFAULT_FONT_SIZE = 44;
+const DEFAULT_PREVIEW_COLOR = "#000000";
+const DARK_MODE_PREVIEW_COLOR = "#ffffff";
 
 /**
  * - `formula`: a single rendered equation image.
@@ -107,7 +107,7 @@ const INITIAL_DATA: LatexElementData = {
   mode: "formula",
   latex: "",
   displayMode: true,
-  color: "#000000",
+  color: DEFAULT_PREVIEW_COLOR,
   fontSize: DEFAULT_FONT_SIZE,
   mixedRender: "native",
   altText: "",
@@ -142,7 +142,10 @@ const appElementClient = initAppElement<LatexElementData>({
         height,
         top: 0,
         left: 0,
-        altText: { text: truncateAltText(data.altText || data.latex), decorative: false },
+        altText: {
+          text: truncateAltText(data.altText || data.latex),
+          decorative: false,
+        },
       },
     ];
   },
@@ -192,6 +195,36 @@ function usePersistentState<T>(
   return [state, update];
 }
 
+function usePrefersDarkMode(): boolean {
+  const [prefersDarkMode, setPrefersDarkMode] = useState(() =>
+    typeof window === "undefined"
+      ? false
+      : window.matchMedia("(prefers-color-scheme: dark)").matches,
+  );
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = (event: MediaQueryListEvent) => {
+      setPrefersDarkMode(event.matches);
+    };
+
+    setPrefersDarkMode(mediaQuery.matches);
+    mediaQuery.addEventListener("change", onChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", onChange);
+    };
+  }, []);
+
+  return prefersDarkMode;
+}
+
+function getPreviewColor(color: string, prefersDarkMode: boolean): string {
+  return prefersDarkMode && color.toLowerCase() === DEFAULT_PREVIEW_COLOR
+    ? DARK_MODE_PREVIEW_COLOR
+    : color;
+}
+
 function prependUnique(list: string[], value: string, max: number): string[] {
   const trimmed = value.trim();
   if (!trimmed) {
@@ -217,14 +250,44 @@ type PreviewState =
   | { kind: "ok"; dataUrl: string; width: number; height: number }
   | { kind: "error"; message: string };
 
+type FormulaRenderResult = {
+  dataUrl: string;
+  width: number;
+  height: number;
+};
+
+function renderFormulaCardPreview(
+  latex: string,
+  prefersDarkMode: boolean,
+): FormulaRenderResult | undefined {
+  try {
+    const color = getPreviewColor(DEFAULT_PREVIEW_COLOR, prefersDarkMode);
+    return hasMath(latex)
+      ? renderMixedPreview({
+          source: latex,
+          color,
+          fontSize: 28,
+        })
+      : renderLatex(latex, {
+          displayMode: true,
+          color,
+          fontSize: 28,
+        });
+  } catch {
+    return undefined;
+  }
+}
+
 export const App = () => {
   const intl = useIntl();
+  const prefersDarkMode = usePrefersDarkMode();
   const [data, setData] = useState<LatexElementData>(INITIAL_DATA);
   const [updateFn, setUpdateFn] = useState<UpdateFn | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("new");
   const [fontName, setFontName] = useState<string | undefined>(undefined);
+  const [sizeDraft, setSizeDraft] = useState<string | null>(null);
 
   const [recent, setRecent] = usePersistentState<string[]>(
     STORAGE_KEYS.recent,
@@ -238,8 +301,6 @@ export const App = () => {
     STORAGE_KEYS.showExamples,
     true,
   );
-  /** Local string while the size NumberInput is being edited; `null` = show committed size. */
-  const [sizeDraft, setSizeDraft] = useState<string | null>(null);
 
   // Keep the UI in sync with the user's selection. When a LaTeX app element is
   // selected, load its data so it can be edited; the `update` function lets us
@@ -291,16 +352,17 @@ export const App = () => {
       return { kind: "empty" };
     }
     try {
+      const color = getPreviewColor(data.color, prefersDarkMode);
       const { dataUrl, width, height } =
         data.mode === "mixed"
           ? renderMixedPreview({
               source: data.latex,
-              color: data.color,
+              color,
               fontSize: data.fontSize,
             })
           : renderLatex(data.latex, {
               displayMode: data.displayMode,
-              color: data.color,
+              color,
               fontSize: data.fontSize,
             });
       return { kind: "ok", dataUrl, width, height };
@@ -321,6 +383,7 @@ export const App = () => {
     data.displayMode,
     data.color,
     data.fontSize,
+    prefersDarkMode,
     intl,
   ]);
 
@@ -528,8 +591,8 @@ export const App = () => {
     const useTextSizes = data.mode === "mixed" && data.mixedRender === "canva";
     const base = useTextSizes
       ? [
-          8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72, 84, 96,
-          100,
+          6, 8, 10, 12, 14, 16, 18, 21, 24, 28, 32, 36, 42, 48, 56, 64, 72, 84,
+          96, 100,
         ]
       : [
           8, 12, 16, 20, 24, 28, 32, 40, 48, 64, 80, 96, 120, 144, 180, 216,
@@ -538,17 +601,154 @@ export const App = () => {
     const values = Array.from(new Set([...base, sizeValue])).sort(
       (a, b) => a - b,
     );
+
     return values.map((value) => ({
       value,
       label: intl.formatMessage(
         {
-          defaultMessage: "{size} px",
-          description: "A selectable text size, in pixels.",
+          defaultMessage: "{size}",
+          description: "A selectable text size.",
         },
-        { size: value },
+        { size: formatFontSize(value) },
       ),
     }));
   }, [intl, data.mode, data.mixedRender, sizeValue]);
+
+  const sizeField = (
+    <FormField
+      label={intl.formatMessage({
+        defaultMessage: "Size",
+        description: "Label for the size selector.",
+      })}
+      control={() => (
+        <CustomizableSelect
+          options={fontSizeOptions}
+          value={sizeValue}
+          onChange={(value) => {
+            applySize(value);
+            setSizeDraft(null);
+          }}
+          trigger={({ onRequestToggle, open, role, ariaControls }) => (
+            <div
+              className={styles.sizeComboTrigger}
+              role={role}
+              aria-expanded={open}
+              aria-controls={ariaControls}
+              onClick={(event) => {
+                if (event.target === event.currentTarget) {
+                  onRequestToggle?.();
+                }
+              }}
+            >
+              <button
+                type="button"
+                className={styles.sizeStepButton}
+                aria-label={intl.formatMessage({
+                  defaultMessage: "Decrease font size",
+                  description:
+                    "Accessible label for the decrease font size control.",
+                })}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  applySize(sizeValue - FONT_SIZE_STEP);
+                }}
+              >
+                -
+              </button>
+              <input
+                className={styles.sizeComboInput}
+                value={sizeDraft ?? formatFontSize(sizeValue)}
+                min={MIN_FONT_SIZE}
+                max={sizeMax}
+                step={FONT_SIZE_STEP}
+                inputMode="decimal"
+                onFocus={() => {
+                  onRequestToggle?.();
+                }}
+                onChange={(event) => {
+                  setSizeDraft(event.currentTarget.value);
+                }}
+                onBlur={() => {
+                  commitSizeDraft();
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    commitSizeDraft();
+                  }
+                  if (event.key === "ArrowUp") {
+                    event.preventDefault();
+                    applySize(sizeValue + FONT_SIZE_STEP);
+                  }
+                  if (event.key === "ArrowDown") {
+                    event.preventDefault();
+                    onRequestToggle?.();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className={styles.sizeStepButton}
+                aria-label={intl.formatMessage({
+                  defaultMessage: "Increase font size",
+                  description:
+                    "Accessible label for the increase font size control.",
+                })}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  applySize(sizeValue + FONT_SIZE_STEP);
+                }}
+              >
+                +
+              </button>
+            </div>
+          )}
+        />
+      )}
+    />
+  );
+
+  const fontField = (
+    <FormField
+      label={intl.formatMessage({
+        defaultMessage: "Font",
+        description: "Label for the text font selector.",
+      })}
+      control={() => (
+        <Button
+          variant="secondary"
+          onClick={chooseFont}
+          stretch
+          alignment="start"
+          icon={ChevronDownIcon}
+          iconPosition="end"
+        >
+          {fontName ??
+            intl.formatMessage({
+              defaultMessage: "Default font",
+              description: "Shown when no specific font is selected.",
+            })}
+        </Button>
+      )}
+    />
+  );
+
+  const colorField = (
+    <FormField
+      label={intl.formatMessage({
+        defaultMessage: "Color",
+        description: "Label for the formula color selector.",
+      })}
+      control={() => (
+        <Swatch
+          fill={[data.color]}
+          onClick={(event) =>
+            openColor(event.currentTarget.getBoundingClientRect())
+          }
+        />
+      )}
+    />
+  );
 
   const submitLabel = updateFn
     ? intl.formatMessage({
@@ -613,16 +813,15 @@ export const App = () => {
                   ) : null}
 
                   {preview.kind === "ok" ? (
-                    <div className={styles.whiteThumbnailContainer}>
-                      <ImageCard
-                        thumbnailUrl={preview.dataUrl}
+                    <div className={styles.previewContainer}>
+                      <img
+                        src={preview.dataUrl}
+                        className={styles.previewImage}
                         alt={intl.formatMessage({
                           defaultMessage: "Rendered LaTeX formula preview",
-                          description: "Alt text for the formula preview image.",
+                          description:
+                            "Alt text for the formula preview image.",
                         })}
-                        thumbnailBackground="none"
-                        thumbnailPadding="2u"
-                        borderRadius="standard"
                       />
                     </div>
                   ) : (
@@ -704,37 +903,6 @@ export const App = () => {
                     />
                   ) : null}
 
-                  {data.mode === "mixed" && data.mixedRender === "canva" ? (
-                    <FormField
-                      label={intl.formatMessage({
-                        defaultMessage: "Font",
-                        description: "Label for the text font selector.",
-                      })}
-                      control={() => (
-                        <Box
-                          display="flex"
-                          justifyContent="spaceBetween"
-                          alignItems="center"
-                        >
-                          <Text size="small" tone="tertiary">
-                            {fontName ??
-                              intl.formatMessage({
-                                defaultMessage: "Default font",
-                                description:
-                                  "Shown when no specific font is selected.",
-                              })}
-                          </Text>
-                          <Button variant="secondary" onClick={chooseFont}>
-                            {intl.formatMessage({
-                              defaultMessage: "Change",
-                              description: "Button to open the font picker.",
-                            })}
-                          </Button>
-                        </Box>
-                      )}
-                    />
-                  ) : null}
-
                   {data.mode === "formula" && showExamples ? (
                     <Rows spacing="1u">
                       <Box
@@ -790,73 +958,25 @@ export const App = () => {
                     />
                   ) : null}
 
-                  <FormField
-                    label={intl.formatMessage({
-                      defaultMessage: "Size",
-                      description: "Label for the size selector.",
-                    })}
-                    control={() => (
-                      <div className={styles.sizeRow}>
-                        <Select
-                          stretch
-                          options={fontSizeOptions}
-                          value={sizeValue}
-                          onChange={(value) => {
-                            applySize(value);
-                            setSizeDraft(null);
-                          }}
-                        />
-                        <NumberInput
-                          value={sizeDraft ?? formatFontSize(sizeValue)}
-                          min={MIN_FONT_SIZE}
-                          max={sizeMax}
-                          step={FONT_SIZE_STEP}
-                          maximumFractionDigits={1}
-                          hasSpinButtons
-                          decrementAriaLabel={intl.formatMessage({
-                            defaultMessage: "Decrease size",
-                            description:
-                              "Accessible label for the decrease font size control.",
-                          })}
-                          incrementAriaLabel={intl.formatMessage({
-                            defaultMessage: "Increase size",
-                            description:
-                              "Accessible label for the increase font size control.",
-                          })}
-                          onChange={(_valueAsNumber, valueAsString) => {
-                            setSizeDraft(valueAsString);
-                          }}
-                          onChangeComplete={(value) => {
-                            if (value != null) {
-                              applySize(value);
-                            }
-                            setSizeDraft(null);
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter") {
-                              event.preventDefault();
-                              commitSizeDraft();
-                            }
-                          }}
-                        />
+                  {data.mode === "formula" ? (
+                    <div className={styles.colorSizeRow}>
+                      {sizeField}
+                      {colorField}
+                    </div>
+                  ) : data.mixedRender === "native" ? (
+                    <div className={styles.colorSizeRow}>
+                      {sizeField}
+                      {colorField}
+                    </div>
+                  ) : (
+                    <Rows spacing="2u">
+                      <div className={styles.fontSizeRow}>
+                        {fontField}
+                        {sizeField}
                       </div>
-                    )}
-                  />
-
-                  <FormField
-                    label={intl.formatMessage({
-                      defaultMessage: "Color",
-                      description: "Label for the formula color selector.",
-                    })}
-                    control={() => (
-                      <Swatch
-                        fill={[data.color]}
-                        onClick={(event) =>
-                          openColor(event.currentTarget.getBoundingClientRect())
-                        }
-                      />
-                    )}
-                  />
+                      {colorField}
+                    </Rows>
+                  )}
 
                   <FormField
                     label={intl.formatMessage({
@@ -868,7 +988,8 @@ export const App = () => {
                         {...props}
                         value={data.altText ?? ""}
                         placeholder={intl.formatMessage({
-                          defaultMessage: "Describe the math for screen readers",
+                          defaultMessage:
+                            "Describe the math for screen readers",
                           description: "Placeholder for the alt text input.",
                         })}
                         minRows={1}
@@ -1024,6 +1145,8 @@ const FormulaGrid = ({
   onSelect,
   onRemove,
 }: FormulaGridProps) => {
+  const prefersDarkMode = usePrefersDarkMode();
+
   if (items.length === 0) {
     return (
       <Text size="small" tone="tertiary" alignment="center">
@@ -1033,98 +1156,92 @@ const FormulaGrid = ({
   }
 
   return (
-    <Grid columns={2} spacing="1u">
-      {items.map((latex) => (
-        <FormulaCard
-          key={latex}
-          latex={latex}
-          onSelect={onSelect}
-          onRemove={onRemove}
-        />
-      ))}
-    </Grid>
+    <div className={styles.formulaList}>
+      {items.map((latex) => {
+        const renderResult = renderFormulaCardPreview(latex, prefersDarkMode);
+
+        return (
+          <FormulaCard
+            key={latex}
+            latex={latex}
+            renderResult={renderResult}
+            onSelect={onSelect}
+            onRemove={onRemove}
+          />
+        );
+      })}
+    </div>
   );
 };
 
 type FormulaCardProps = {
   latex: string;
+  renderResult?: FormulaRenderResult;
   onSelect: (latex: string) => void;
   onRemove?: (latex: string) => void;
 };
 
-const FormulaCard = ({ latex, onSelect, onRemove }: FormulaCardProps) => {
+const FormulaCard = ({
+  latex,
+  renderResult,
+  onSelect,
+  onRemove,
+}: FormulaCardProps) => {
   const intl = useIntl();
-  const thumbnail = useMemo(() => {
-    try {
-      return hasMath(latex)
-        ? renderMixedPreview({
-            source: latex,
-            color: "#000000",
-            fontSize: 28,
-          }).dataUrl
-        : renderLatex(latex, {
-            displayMode: true,
-            color: "#000000",
-            fontSize: 28,
-          }).dataUrl;
-    } catch {
-      return undefined;
-    }
-  }, [latex]);
 
-  const card = thumbnail ? (
-    <div className={styles.whiteThumbnailContainer}>
-      <ImageCard
-        thumbnailUrl={thumbnail}
+  const card = renderResult ? (
+    <button
+      className={styles.formulaCardButton}
+      onClick={() => onSelect(latex)}
+      aria-label={intl.formatMessage({
+        defaultMessage: "Insert this saved item",
+        description: "Accessible label for a saved item card.",
+      })}
+      title={latex}
+    >
+      <img
+        src={renderResult.dataUrl}
+        className={styles.formulaCardImage}
         alt={latex}
-        ariaLabel={intl.formatMessage({
-          defaultMessage: "Insert this saved item",
-          description: "Accessible label for a saved item card.",
-        })}
-        thumbnailBackground="none"
-        thumbnailPadding="2u"
-        borderRadius="standard"
-        onClick={() => onSelect(latex)}
       />
-    </div>
-    ) : (
-      <Button
-        variant="secondary"
-        stretch
-        alignment="start"
-        onClick={() => onSelect(latex)}
-        ariaLabel={intl.formatMessage({
-          defaultMessage: "Insert this saved item",
-          description: "Accessible label for a saved text item card.",
-        })}
-      >
+    </button>
+  ) : (
+    <button
+      className={styles.formulaTextButton}
+      onClick={() => onSelect(latex)}
+      aria-label={intl.formatMessage({
+        defaultMessage: "Insert this saved item",
+        description: "Accessible label for a saved text item card.",
+      })}
+      title={latex}
+    >
+      <Text size="small" tone="secondary">
         {latex}
-      </Button>
-    );
-
-  if (!onRemove) {
-    return card;
-  }
+      </Text>
+    </button>
+  );
 
   return (
-    <div className={styles.favoriteCardWrap}>
+    <div className={styles.formulaListItem}>
       {card}
-      <div className={styles.favoriteTrash}>
-        <LinkButton
-          variant="critical"
-          onClick={() => onRemove(latex)}
-          ariaLabel={intl.formatMessage({
-            defaultMessage: "Remove from favorites",
-            description: "Accessible label for the favorite remove button.",
-          })}
-          tooltipLabel={intl.formatMessage({
-            defaultMessage: "Remove from favorites",
-            description: "Tooltip for the favorite remove button.",
-          })}
-        >
-          <TrashIcon />
-        </LinkButton>
-      </div>
+      {onRemove ? (
+        <div className={styles.favoriteTrash}>
+          <LinkButton
+            variant="critical"
+            onClick={() => onRemove(latex)}
+            ariaLabel={intl.formatMessage({
+              defaultMessage: "Remove from favorites",
+              description: "Accessible label for the favorite remove button.",
+            })}
+            tooltipLabel={intl.formatMessage({
+              defaultMessage: "Remove from favorites",
+              description: "Tooltip for the favorite remove button.",
+            })}
+          >
+            <TrashIcon />
+          </LinkButton>
+        </div>
+      ) : null}
     </div>
   );
 };
