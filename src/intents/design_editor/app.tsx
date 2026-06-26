@@ -870,7 +870,7 @@ export const App = () => {
                           data.mode === "mixed"
                             ? intl.formatMessage({
                                 defaultMessage:
-                                  "certainly $x^2 + 2ac$ is appropriate",
+                                  "example: here, $sin^2(x)$ is",
                                 description:
                                   "Placeholder for the mixed text and math input.",
                               })
