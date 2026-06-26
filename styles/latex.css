@@ -109,55 +109,7 @@
   background: var(--ui-kit-color-surface-hover, rgba(57, 76, 96, 0.08));
 }
 
-.sizeStepButton::after {
-  background: #25262b;
-  border-radius: 8px;
-  bottom: calc(100% + 10px);
-  color: #ffffff;
-  content: attr(data-tooltip);
-  font-size: 12px;
-  font-weight: 600;
-  left: 50%;
-  line-height: 1.2;
-  opacity: 0;
-  padding: 8px 10px;
-  pointer-events: none;
-  position: absolute;
-  transform: translateX(-50%) translateY(4px);
-  transition:
-    opacity 120ms ease,
-    transform 120ms ease;
-  visibility: hidden;
-  white-space: nowrap;
-  z-index: 10;
-}
 
-.sizeStepButton::before {
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 6px solid #25262b;
-  bottom: calc(100% + 4px);
-  content: "";
-  left: 50%;
-  opacity: 0;
-  pointer-events: none;
-  position: absolute;
-  transform: translateX(-50%) translateY(4px);
-  transition:
-    opacity 120ms ease,
-    transform 120ms ease;
-  visibility: hidden;
-  z-index: 10;
-}
-
-.sizeStepButton:hover::after,
-.sizeStepButton:focus-visible::after,
-.sizeStepButton:hover::before,
-.sizeStepButton:focus-visible::before {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-  visibility: visible;
-}
 
 .favoriteTrash {
   position: absolute;
