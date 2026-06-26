@@ -49,7 +49,7 @@
   appearance: textfield;
   background: transparent;
   border: 0;
-  color: var(--ui-kit-color-typography-primary, #0e1318);
+  color: inherit;
   font-family:
     "Canva Sans",
     "Noto Sans Variable",
@@ -81,7 +81,7 @@
   appearance: none;
   background: transparent;
   border: 0;
-  color: var(--ui-kit-color-typography-primary, #0e1318);
+  color: inherit;
   cursor: pointer;
   display: flex;
   font-family:
@@ -117,13 +117,21 @@
   right: 8px;
   z-index: 2;
   display: flex;
+}
+
+.favoriteTrash button {
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 9999px;
-  background: var(--ui-kit-color-surface, #ffffff);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.favoriteTrash button:hover {
+  background: var(--ui-kit-color-surface-hover, rgba(57, 76, 96, 0.08));
 }
 
 .formulaList {

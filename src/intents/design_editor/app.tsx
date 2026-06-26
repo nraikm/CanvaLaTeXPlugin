@@ -358,12 +358,12 @@ export const App = () => {
           ? renderMixedPreview({
               source: data.latex,
               color,
-              fontSize: data.fontSize,
+              fontSize: DEFAULT_FONT_SIZE,
             })
           : renderLatex(data.latex, {
               displayMode: data.displayMode,
               color,
-              fontSize: data.fontSize,
+              fontSize: DEFAULT_FONT_SIZE,
             });
       return { kind: "ok", dataUrl, width, height };
     } catch (error) {
