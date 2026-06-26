@@ -97,6 +97,8 @@ type LatexElementData = {
    * Canva text with inline math (`canva`).
    */
   mixedRender: MixedRenderMode;
+  /** Custom alt text for the rendered LaTeX. */
+  altText?: string;
 };
 
 type UpdateFn = (opts: AppElementOptions<LatexElementData>) => Promise<void>;
@@ -108,6 +110,7 @@ const INITIAL_DATA: LatexElementData = {
   color: "#000000",
   fontSize: DEFAULT_FONT_SIZE,
   mixedRender: "native",
+  altText: "",
 };
 
 // The app element client must be created outside of the React component, since
@@ -121,6 +124,7 @@ const appElementClient = initAppElement<LatexElementData>({
         fontSize: data.fontSize,
         fontRef: data.fontRef,
         mixedRender: data.mixedRender,
+        altText: data.altText,
       });
     }
 
@@ -138,7 +142,7 @@ const appElementClient = initAppElement<LatexElementData>({
         height,
         top: 0,
         left: 0,
-        altText: { text: truncateAltText(data.latex), decorative: false },
+        altText: { text: truncateAltText(data.altText || data.latex), decorative: false },
       },
     ];
   },
@@ -609,16 +613,18 @@ export const App = () => {
                   ) : null}
 
                   {preview.kind === "ok" ? (
-                    <ImageCard
-                      thumbnailUrl={preview.dataUrl}
-                      alt={intl.formatMessage({
-                        defaultMessage: "Rendered LaTeX formula preview",
-                        description: "Alt text for the formula preview image.",
-                      })}
-                      thumbnailBackground="secondary"
-                      thumbnailPadding="2u"
-                      borderRadius="standard"
-                    />
+                    <div className={styles.whiteThumbnailContainer}>
+                      <ImageCard
+                        thumbnailUrl={preview.dataUrl}
+                        alt={intl.formatMessage({
+                          defaultMessage: "Rendered LaTeX formula preview",
+                          description: "Alt text for the formula preview image.",
+                        })}
+                        thumbnailBackground="none"
+                        thumbnailPadding="2u"
+                        borderRadius="standard"
+                      />
+                    </div>
                   ) : (
                     <Box
                       background="neutralSubtle"
@@ -852,6 +858,26 @@ export const App = () => {
                     )}
                   />
 
+                  <FormField
+                    label={intl.formatMessage({
+                      defaultMessage: "Alt text",
+                      description: "Label for the alt text input.",
+                    })}
+                    control={(props) => (
+                      <MultilineInput
+                        {...props}
+                        value={data.altText ?? ""}
+                        placeholder={intl.formatMessage({
+                          defaultMessage: "Describe the math for screen readers",
+                          description: "Placeholder for the alt text input.",
+                        })}
+                        minRows={1}
+                        autoGrow
+                        onChange={(value) => patch({ altText: value })}
+                      />
+                    )}
+                  />
+
                   {submitError ? (
                     <Alert
                       tone="critical"
@@ -1037,7 +1063,7 @@ const FormulaCard = ({ latex, onSelect, onRemove }: FormulaCardProps) => {
             fontSize: 28,
           }).dataUrl
         : renderLatex(latex, {
-            displayMode: false,
+            displayMode: true,
             color: "#000000",
             fontSize: 28,
           }).dataUrl;
@@ -1047,18 +1073,20 @@ const FormulaCard = ({ latex, onSelect, onRemove }: FormulaCardProps) => {
   }, [latex]);
 
   const card = thumbnail ? (
-    <ImageCard
-      thumbnailUrl={thumbnail}
-      alt={latex}
-      ariaLabel={intl.formatMessage({
-        defaultMessage: "Insert this saved item",
-        description: "Accessible label for a saved item card.",
-      })}
-      thumbnailBackground="secondary"
-      thumbnailPadding="1u"
-      borderRadius="standard"
-      onClick={() => onSelect(latex)}
-    />
+    <div className={styles.whiteThumbnailContainer}>
+      <ImageCard
+        thumbnailUrl={thumbnail}
+        alt={latex}
+        ariaLabel={intl.formatMessage({
+          defaultMessage: "Insert this saved item",
+          description: "Accessible label for a saved item card.",
+        })}
+        thumbnailBackground="none"
+        thumbnailPadding="2u"
+        borderRadius="standard"
+        onClick={() => onSelect(latex)}
+      />
+    </div>
     ) : (
       <Button
         variant="secondary"

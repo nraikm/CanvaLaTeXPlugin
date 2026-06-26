@@ -38,6 +38,8 @@ export type MixedData = {
    * - `canva`: native Canva text elements with inline math images.
    */
   mixedRender?: MixedRenderMode;
+  /** Custom alt text for the rendered LaTeX. */
+  altText?: string;
 };
 
 /** The maximum font size Canva allows on a native text element. */
@@ -274,7 +276,7 @@ function buildNativeMixedElements(data: MixedData): GroupContentAtPoint[] {
       height,
       top: y,
       left: 0,
-      altText: { text: truncateAltText(data.source), decorative: false },
+      altText: { text: truncateAltText(data.altText || data.source), decorative: false },
     });
     y += height + lineGap;
   }

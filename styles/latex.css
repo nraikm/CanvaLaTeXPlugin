@@ -56,3 +56,9 @@
   background: var(--ui-kit-color-surface, #ffffff);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
 }
+
+.whiteThumbnailContainer {
+  background-color: #ffffff;
+  border-radius: 8px; /* Matches Canva's standard borderRadius */
+}
+
