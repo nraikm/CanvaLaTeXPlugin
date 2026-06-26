@@ -81,9 +81,6 @@ export const MAX_ALT_TEXT_LENGTH = 250;
 const SANS_TEXT_BASELINE_RATIO = 0.95;
 const FONTREF_TEXT_BASELINE_RATIO = 1;
 
-/** Lowers inline math relative to surrounding `\text{}` in native LaTeX lines. */
-const NATIVE_MATH_LOWER = "0.08em";
-
 export function truncateAltText(value: string): string {
   return value.length <= MAX_ALT_TEXT_LENGTH
     ? value
@@ -195,23 +192,14 @@ function runToTeX(run: TextRun): string {
   return piece;
 }
 
-/** Wraps a math fragment for native mode so it sits on the `\text{}` baseline. */
-function mathToNativeLatex(value: string): string {
-  return `\\lower${NATIVE_MATH_LOWER}{${value}}`;
-}
-
 /** Converts parsed line segments into a LaTeX expression for rendering. */
 function segmentsToLatex(
   segments: LineSegment[],
-  options?: { lowerMath?: boolean },
 ): string {
-  const lowerMath = options?.lowerMath ?? false;
   const body = segments
     .map((segment) =>
       segment.type === "math"
-        ? lowerMath
-          ? mathToNativeLatex(segment.value)
-          : segment.value
+        ? segment.value
         : segment.runs.map(runToTeX).join(""),
     )
     .join("");
@@ -262,7 +250,7 @@ function buildNativeMixedElements(data: MixedData): GroupContentAtPoint[] {
 
   for (const segments of lines) {
     const { dataUrl, width, height } = renderLatex(
-      segmentsToLatex(segments, { lowerMath: true }),
+      segmentsToLatex(segments),
       {
         displayMode: false,
         color: data.color,
